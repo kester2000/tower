@@ -45,6 +45,9 @@ struct IdSetHash
     }
 };
 
+unordered_map<IdSet, int, IdSetHash> dp;
+unordered_set<IdSet, IdSetHash> inside;
+
 static bool isWall(const MapCode &value)
 {
     return value == "a3";
@@ -86,6 +89,10 @@ static IdSet getAdjacent(int i, int j)
     int flag[N][N] = {0};
     color(ret, flag, i, j);
     return ret;
+}
+
+static void directlyAdd(IdSet &idSet, Attr &attr, int &hp)
+{
 }
 
 int init(const char *body)
@@ -164,6 +171,7 @@ int init(const char *body)
             monsterMp.emplace(move(mapCode), move(attr));
         }
     }
+
     int top = 3;
     for (int i = 0; i < N; i++)
     {
@@ -195,14 +203,6 @@ int init(const char *body)
     //     }
     //     cout << endl;
     // }
-    return 0;
-}
-
-// If NULL is passed in, it is directly output in std::out, otherwise it is output in buffer.
-int spfa(char *buffer)
-{
-    // string str;
-    // stringstream ss(str);
 
     for (int i = 0; i < N; i++)
     {
@@ -213,15 +213,31 @@ int spfa(char *buffer)
             if (!isWall(mapCode) && !isRoad(mapCode))
             {
                 adjacent[id] = getAdjacent(i, j);
-                cout << nameMp[mapCode] << ":";
-                for (const auto &i : adjacent[id])
-                {
-                    cout << nameMp[id2MapCode[i]] << " ";
-                }
-                cout << endl;
+                // cout << nameMp[mapCode] << ":";
+                // for (const auto &i : adjacent[id])
+                // {
+                //     cout << nameMp[id2MapCode[i]] << " ";
+                // }
+                // cout << endl;
             }
         }
     }
+
+    return 0;
+}
+
+// If NULL is passed in, it is directly output in std::out, otherwise it is output in buffer.
+int spfa(char *buffer)
+{
+    // string str;
+    // stringstream ss(str);
+
+    IdSet initSet = {startId};
+    directlyAdd(initSet, initAttr, initHp);
+    queue<pair<IdSet, Attr>> queue;
+    queue.emplace(initSet, initAttr);
+    dp[initSet] = initHp;
+    inside.insert(initSet);
     // cout << ss.str();
     // if (buffer)
     //     strcpy(buffer, ss.str().c_str());

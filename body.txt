@@ -1,0 +1,24 @@
+250 10 5 0 0 3 1 0 0 3 3
+a3 a3 a3 a3 a3 a3 a3 a3 a3 a3 a3 a3 a3
+a3 a0 c1 i2 a0 c4 a3 a0 i3 c6 a3 c6 a3
+a3 h0 a3 a3 a3 i3 a3 a0 a3 j0 a3 j8 a3
+a3 j0 h0 a0 a3 c6 j1 a0 j8 a0 a0 h0 a3
+a3 c0 a3 j1 a3 a3 a3 a0 a3 a0 a3 a0 a3
+a3 a0 a0 j0 a3 c7 i3 h0 i3 a0 a3 a0 a3
+a3 a3 a3 a0 a3 a3 a3 c7 a3 h0 a3 a0 a3
+a3 h0 i0 a0 a3 c0 a0 a0 a3 c6 a3 d1 a3
+a3 h0 a3 a3 a3 a0 a3 a3 a3 h1 a3 a0 a3
+a3 h0 l4 c4 a3 a0 a0 j0 h1 i7 c7 i2 a3
+a3 a0 a3 a3 a3 a0 a3 a0 a3 l4 a3 j8 a3
+a3 c0 a0 d1 a0 c0 a3 a0 a0 c6 h1 d0 a3
+a3 a3 a3 a3 a3 a3 a3 a3 a3 a3 a3 a3 a3
+
+mapcode i0 prefix green_slime name 小绿 bfEvents null afEvents null hp 30 attack 6 defend 5 coins 11 exp 3 sp 0
+mapcode i2 prefix black_slime name 小灰 bfEvents null afEvents null hp 60 attack 5 defend 5 coins 10 exp 6 sp 2
+mapcode i3 prefix slime_king name 史莱姆王 bfEvents null afEvents null hp 60 attack 22 defend 5 coins 27 exp 6 sp 0
+mapcode j0 prefix gray_witcher name 见习巫师 bfEvents null afEvents null hp 35 attack 6 defend 5 coins 11 exp 4 sp 2
+mapcode j1 prefix red_witcher name 巫师 bfEvents null afEvents null hp 195 attack 9 defend 4 coins 13 exp 20 sp 2
+mapcode j8 prefix stoneman name 石人 bfEvents null afEvents null hp 15 attack 19 defend 0 coins 19 exp 2 sp 3
+mapcode l4 prefix black_stoneman name 精英 石人 bfEvents null afEvents null hp 20 attack 35 defend 0 coins 35 exp 2 sp 3
+mapcode i7 prefix BOSS name BOSS！ bfEvents 伟大的勇士，等你好久了 afEvents 我居然被打败了！ hp 410 attack 38 defend 11 coins 0 exp 9999 sp 0
+3 3 0 75 200 2000 500 10 10

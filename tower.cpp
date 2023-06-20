@@ -9,6 +9,7 @@ using IdSet = set<Id>;
 
 const Id startId = 2;
 const MapCode startCode = "ST";
+const string bossName = "BOSS！";
 
 struct Attr {
     int attack, defend, yellow, blue, red;
@@ -43,7 +44,11 @@ struct IdSetHash {
 };
 
 unordered_map<IdSet, int, IdSetHash> dp;
+unordered_map<IdSet, string, IdSetHash> path;
 unordered_set<IdSet, IdSetHash> inside;
+
+static int bestHp;
+static string bestPath;
 
 static bool isWall(const MapCode &value) { return value == "a3"; }
 
@@ -77,7 +82,9 @@ static IdSet getAdjacent(int i, int j)
     return ret;
 }
 
-static void directlyAdd(IdSet &idSet, Attr &attr, int &hp) {}
+static bool touch(Id id, IdSet &idSet, Attr &attr, int &hp) {}
+
+static void add(IdSet &idSet, Attr &attr, int &hp) {}
 
 int init(const char *body)
 {
@@ -139,7 +146,7 @@ int init(const char *body)
             // cout << mapCode << ' ' << attr.name << ' ' << attr.hp << ' ' << attr.attack << ' ' << attr.defend << ' '
             // << attr.sp << endl;
             nameMp[mapCode] = move(name);
-            monsterMp.emplace(move(mapCode), move(attr));
+            monsterMp[mapCode] = move(attr);
         }
     }
 
@@ -153,7 +160,7 @@ int init(const char *body)
                 idMap[i][j] = 1;
             } else {
                 idMap[i][j] = top++;
-                id2MapCode.push_back(codeMap[i][j]);
+                id2MapCode.emplace_back(codeMap[i][j]);
             }
         }
     }
@@ -193,12 +200,50 @@ int spfa(char *buffer)
     // string str;
     // stringstream ss(str);
 
-    IdSet initSet = {startId};
-    directlyAdd(initSet, initAttr, initHp);
     queue<pair<IdSet, Attr>> queue;
-    queue.emplace(initSet, initAttr);
+    IdSet initSet = {startId};
+    add(initSet, initAttr, initHp);
     dp[initSet] = initHp;
     inside.insert(initSet);
+    queue.emplace(move(initSet), move(initAttr));
+
+    while (!queue.empty()) {
+        auto t = queue.front();
+        queue.pop();
+        inside.erase(t.first);
+        IdSet nxtSet;
+        for (const auto &u : t.first) {
+            for (const auto &v : adjacent[u]) {
+                if (!t.first.count(v)) {
+                    nxtSet.insert(v);
+                }
+            }
+        }
+        for (const auto &id : nxtSet) {
+            IdSet idSet = t.first;
+            Attr attr = t.second;
+            int hp = dp[idSet];
+            if (touch(id, idSet, attr, hp)) {
+                if (nameMp[id2MapCode[id]] == bossName) {
+                    if (bestHp < hp) {
+                        bestHp = hp;
+                        bestPath = path[t.first] + to_string(id) + " ";
+                    }
+                } else {
+                    add(idSet, attr, hp);
+                    if (hp > dp[idSet]) {
+                        dp[idSet] = hp;
+                        path[idSet] = path[t.first] + to_string(id) + " ";
+                        if (!inside.count(idSet)) {
+                            inside.insert(idSet);
+                            queue.emplace(move(idSet), move(attr));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // cout << ss.str();
     // if (buffer)
     //     strcpy(buffer, ss.str().c_str());

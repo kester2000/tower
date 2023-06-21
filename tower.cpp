@@ -2,6 +2,13 @@
 
 #include <bits/stdc++.h>
 
+#define QUEUE_LOG
+
+#ifdef QUEUE_LOG
+#define LOG_INTERVAl 1000
+static int queue_cnt = 0;
+#endif
+
 using namespace std;
 using Id = int;
 using MapCode = string;
@@ -241,6 +248,12 @@ int spfa(char *buffer)
     queue.emplace(move(initSet), move(initAttr));
 
     while (!queue.empty()) {
+#ifdef QUEUE_LOG
+        if (queue_cnt % LOG_INTERVAl == 0) {
+            cout << "queue_cnt: " << queue_cnt << " queue.size(): " << queue.size() << endl;
+        }
+        ++queue_cnt;
+#endif
         auto t = queue.front();
         queue.pop();
         inside.erase(t.first);

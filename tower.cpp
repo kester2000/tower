@@ -19,9 +19,22 @@ struct MonsterAttr {
     int hp, attack, defend, sp;
 };
 
+unordered_map<MapCode, string> nameMp = {
+    {"ST", "起点"},   {"c0", "黄钥匙"}, {"c1", "蓝钥匙"}, {"c2", "红钥匙"}, {"c4", "剑"},   {"c6", "蓝宝石"},
+    {"c7", "红宝石"}, {"d0", "红血瓶"}, {"d1", "蓝血瓶"}, {"h0", "黄门"},   {"h1", "蓝门"}, {"h2", "红门"},
+};
+
+unordered_map<MapCode, Attr> attrMp = {
+    {"c0", {0, 0, 1, 0, 0}},  {"c1", {0, 0, 0, 1, 0}},  {"c2", {0, 0, 0, 0, 1}},
+    {"c4", {10, 0, 0, 0, 0}}, {"c6", {0, 3, 0, 0, 0}},  {"c7", {3, 0, 0, 0, 0}},
+    {"h0", {0, 0, -1, 0, 0}}, {"h1", {0, 0, 0, -1, 0}}, {"h2", {0, 0, 0, 0, -1}},
+};
+
+unordered_map<MapCode, int> hpMp = {{"d0", 75}, {"d1", 200}};
+
 unordered_map<MapCode, MonsterAttr> monsterMp;
-unordered_map<MapCode, string> nameMp;
-vector<MapCode> id2MapCode;
+
+vector<MapCode> id2MapCode = {"road", "wall", "ST"};
 
 #define N 13
 static Id idMap[N][N];
@@ -44,11 +57,11 @@ struct IdSetHash {
 };
 
 unordered_map<IdSet, int, IdSetHash> dp;
-unordered_map<IdSet, string, IdSetHash> path;
+unordered_map<IdSet, vector<Id>, IdSetHash> path;
 unordered_set<IdSet, IdSetHash> inside;
 
 static int bestHp;
-static string bestPath;
+static IdSet bestIdSet;
 
 static bool isWall(const MapCode &value) { return value == "a3"; }
 
@@ -82,17 +95,37 @@ static IdSet getAdjacent(int i, int j)
     return ret;
 }
 
-static bool touch(Id id, IdSet &idSet, Attr &attr, int &hp) {}
+static bool touch(Id id, IdSet &idSet, Attr &attr, int &hp)
+{
+    const MapCode &mapCode = id2MapCode[id];
+    if (hpMp.count(mapCode)) {
+        hp += hpMp[mapCode];
+    } else if (attrMp.count(mapCode)) {
+        const Attr &other = attrMp[mapCode];
+        attr.attack += other.attack;
+        attr.defend += other.defend;
+        attr.yellow += other.yellow;
+        attr.blue += other.blue;
+        attr.red += other.red;
+    } else {
+        const MonsterAttr &monster = monsterMp[mapCode];
+        int heroDamage = monster.sp == 3 ? 1 : attr.attack - monster.defend;
+        if (heroDamage <= 0) return false;
+        int monsterDamage = monster.sp == 2 ? monster.attack : monster.attack - attr.defend;
+        if (monsterDamage < 0) monsterDamage = 0;
+        hp -= ((monster.hp - 1) / heroDamage) * monsterDamage;
+    }
+    if (hp <= 0 || attr.yellow < 0 || attr.blue < 0 || attr.red < 0) {
+        return false;
+    }
+    idSet.insert(id);
+    return true;
+}
 
 static void add(IdSet &idSet, Attr &attr, int &hp) {}
 
 int init(const char *body)
 {
-    id2MapCode = {"roda", "wall", "ST"};
-    nameMp = {
-        {"ST", "起点"},   {"c0", "黄钥匙"}, {"c1", "蓝钥匙"}, {"c2", "红钥匙"}, {"c4", "剑"},   {"c6", "蓝宝石"},
-        {"c7", "红宝石"}, {"d0", "红血瓶"}, {"d1", "蓝血瓶"}, {"h0", "黄门"},   {"h1", "蓝门"}, {"h2", "红门"},
-    };
     int buffInt;
     char buff[256];
     stringstream ss(body);
@@ -224,25 +257,34 @@ int spfa(char *buffer)
             Attr attr = t.second;
             int hp = dp[idSet];
             if (touch(id, idSet, attr, hp)) {
-                if (nameMp[id2MapCode[id]] == bossName) {
-                    if (bestHp < hp) {
-                        bestHp = hp;
-                        bestPath = path[t.first] + to_string(id) + " ";
-                    }
-                } else {
+                if (nameMp[id2MapCode[id]] != bossName) {
                     add(idSet, attr, hp);
-                    if (hp > dp[idSet]) {
-                        dp[idSet] = hp;
-                        path[idSet] = path[t.first] + to_string(id) + " ";
+                }
+                if (hp > dp[idSet]) {
+                    dp[idSet] = hp;
+                    path[idSet] = path[t.first];
+                    path[idSet].emplace_back(id);
+                    if (nameMp[id2MapCode[id]] != bossName) {
                         if (!inside.count(idSet)) {
                             inside.insert(idSet);
                             queue.emplace(move(idSet), move(attr));
+                        }
+                    } else {
+                        if (bestHp < hp) {
+                            bestHp = hp;
+                            bestIdSet = idSet;
                         }
                     }
                 }
             }
         }
     }
+
+    cout << bestHp << endl;
+    for (const auto &id : path[bestIdSet]) {
+        cout << id << ' ';
+    }
+    cout << endl;
 
     // cout << ss.str();
     // if (buffer)

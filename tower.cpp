@@ -129,7 +129,33 @@ static bool touch(Id id, IdSet &idSet, Attr &attr, int &hp)
     return true;
 }
 
-static void add(IdSet &idSet, Attr &attr, int &hp) {}
+static vector<Id> add(IdSet &idSet, Attr &attr, int &hp)
+{
+    vector<Id> ret;
+    // need to remove some map codes in some maps
+    unordered_set<MapCode> addSet = {"c0", "c1", "c2", "c4", "c6", "c7", "d0", "d1"};
+    queue<Id> nxtQueue;
+    for (const auto &u : idSet) {
+        for (const auto &v : adjacent[u]) {
+            nxtQueue.push(v);
+        }
+    }
+    while (!nxtQueue.empty()) {
+        Id &id = nxtQueue.front();
+        nxtQueue.pop();
+        if (idSet.count(id)) {
+            continue;
+        } else if (addSet.count(id2MapCode[id])) {
+            bool flag = touch(id, idSet, attr, hp);
+            assert(flag);
+            ret.push_back(id);
+            for (const auto &v : adjacent[id]) {
+                nxtQueue.push(v);
+            }
+        }
+    }
+    return ret;
+}
 
 int init(const char *body)
 {
@@ -269,14 +295,18 @@ int spfa(char *buffer)
             IdSet idSet = t.first;
             Attr attr = t.second;
             int hp = dp[idSet];
+            vector<Id> addRet;
             if (touch(id, idSet, attr, hp)) {
                 if (nameMp[id2MapCode[id]] != bossName) {
-                    add(idSet, attr, hp);
+                    addRet = add(idSet, attr, hp);
                 }
                 if (hp > dp[idSet]) {
                     dp[idSet] = hp;
                     path[idSet] = path[t.first];
                     path[idSet].emplace_back(id);
+                    for (auto &addId : addRet) {
+                        path[idSet].emplace_back(addId);
+                    }
                     if (nameMp[id2MapCode[id]] != bossName) {
                         if (!inside.count(idSet)) {
                             inside.insert(idSet);

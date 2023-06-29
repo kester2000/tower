@@ -316,6 +316,11 @@ int spfa(char *buffer)
                         if (bestHp < hp) {
                             bestHp = hp;
                             bestIdSet = idSet;
+                            cout << bestHp << endl;
+                            for (const auto &id : path[bestIdSet]) {
+                                cout << id << ' ';
+                            }
+                            cout << endl;
                         }
                     }
                 }

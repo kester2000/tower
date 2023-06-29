@@ -13,6 +13,7 @@ using namespace std;
 using Id = int;
 using MapCode = string;
 using IdSet = set<Id>;
+using State = pair<IdSet, int>;
 
 const Id startId = 2;
 const MapCode startCode = "ST";
@@ -52,23 +53,24 @@ static int initX, initY;
 
 unordered_map<Id, IdSet> adjacent;
 
-struct IdSetHash {
-    size_t operator()(const IdSet &idSet) const
+struct StatetHash {
+    size_t operator()(const State &state) const
     {
         size_t seed = 0;
-        for (const auto &value : idSet) {
+        for (const auto &value : state.first) {
             seed ^= hash<Id>{}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         }
+        seed ^= hash<Id>{}(state.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         return seed;
     }
 };
 
-unordered_map<IdSet, int, IdSetHash> dp;
-unordered_map<IdSet, vector<Id>, IdSetHash> path;
-unordered_set<IdSet, IdSetHash> inside;
+unordered_map<State, int, StatetHash> dp;
+unordered_map<State, vector<Id>, StatetHash> path;
+unordered_set<State, StatetHash> inside;
 
 static int bestHp;
-static IdSet bestIdSet;
+static State bestState;
 
 static bool isWall(const MapCode &value) { return value == "a3"; }
 
@@ -102,7 +104,7 @@ static IdSet getAdjacent(int i, int j)
     return ret;
 }
 
-static bool touch(Id id, IdSet &idSet, Attr &attr, int &hp)
+static bool touch(Id id, State &state, Attr &attr, int &hp)
 {
     const MapCode &mapCode = id2MapCode[id];
     if (hpMp.count(mapCode)) {
@@ -125,17 +127,17 @@ static bool touch(Id id, IdSet &idSet, Attr &attr, int &hp)
     if (hp <= 0 || attr.yellow < 0 || attr.blue < 0 || attr.red < 0) {
         return false;
     }
-    idSet.insert(id);
+    state.first.insert(id);
     return true;
 }
 
-static vector<Id> add(IdSet &idSet, Attr &attr, int &hp)
+static vector<Id> add(State &state, Attr &attr, int &hp)
 {
     vector<Id> ret;
     // need to remove some map codes in some maps
     unordered_set<MapCode> addSet = {"c0", "c1", "c2", "c4", "c6", "c7", "d0", "d1"};
     queue<Id> nxtQueue;
-    for (const auto &u : idSet) {
+    for (const auto &u : state.first) {
         for (const auto &v : adjacent[u]) {
             nxtQueue.push(v);
         }
@@ -143,10 +145,10 @@ static vector<Id> add(IdSet &idSet, Attr &attr, int &hp)
     while (!nxtQueue.empty()) {
         Id &id = nxtQueue.front();
         nxtQueue.pop();
-        if (idSet.count(id)) {
+        if (state.first.count(id)) {
             continue;
         } else if (addSet.count(id2MapCode[id])) {
-            bool flag = touch(id, idSet, attr, hp);
+            bool flag = touch(id, state, attr, hp);
             assert(flag);
             ret.push_back(id);
             for (const auto &v : adjacent[id]) {
@@ -266,12 +268,12 @@ int spfa(char *buffer)
     // string str;
     // stringstream ss(str);
 
-    queue<pair<IdSet, Attr>> queue;
-    IdSet initSet = {startId};
-    add(initSet, initAttr, initHp);
-    dp[initSet] = initHp;
-    inside.insert(initSet);
-    queue.emplace(move(initSet), move(initAttr));
+    queue<pair<State, Attr>> queue;
+    State initstate = {{startId}, 0};
+    add(initstate, initAttr, initHp);
+    dp[initstate] = initHp;
+    inside.insert(initstate);
+    queue.emplace(move(initstate), move(initAttr));
 
     while (!queue.empty()) {
 #ifdef QUEUE_LOG
@@ -284,40 +286,40 @@ int spfa(char *buffer)
         queue.pop();
         inside.erase(t.first);
         IdSet nxtSet;
-        for (const auto &u : t.first) {
+        for (const auto &u : t.first.first) {
             for (const auto &v : adjacent[u]) {
-                if (!t.first.count(v)) {
+                if (!t.first.first.count(v)) {
                     nxtSet.insert(v);
                 }
             }
         }
         for (const auto &id : nxtSet) {
-            IdSet idSet = t.first;
+            State state = t.first;
             Attr attr = t.second;
-            int hp = dp[idSet];
+            int hp = dp[state];
             vector<Id> addRet;
-            if (touch(id, idSet, attr, hp)) {
+            if (touch(id, state, attr, hp)) {
                 if (nameMp[id2MapCode[id]] != bossName) {
-                    addRet = add(idSet, attr, hp);
+                    addRet = add(state, attr, hp);
                 }
-                if (hp > dp[idSet]) {
-                    dp[idSet] = hp;
-                    path[idSet] = path[t.first];
-                    path[idSet].emplace_back(id);
+                if (hp > dp[state]) {
+                    dp[state] = hp;
+                    path[state] = path[t.first];
+                    path[state].emplace_back(id);
                     for (auto &addId : addRet) {
-                        path[idSet].emplace_back(addId);
+                        path[state].emplace_back(addId);
                     }
                     if (nameMp[id2MapCode[id]] != bossName) {
-                        if (!inside.count(idSet)) {
-                            inside.insert(idSet);
-                            queue.emplace(move(idSet), move(attr));
+                        if (!inside.count(state)) {
+                            inside.insert(state);
+                            queue.emplace(move(state), move(attr));
                         }
                     } else {
                         if (bestHp < hp) {
                             bestHp = hp;
-                            bestIdSet = idSet;
+                            bestState = state;
                             cout << bestHp << endl;
-                            for (const auto &id : path[bestIdSet]) {
+                            for (const auto &id : path[bestState]) {
                                 cout << id << ' ';
                             }
                             cout << endl;
@@ -329,7 +331,7 @@ int spfa(char *buffer)
     }
 
     cout << bestHp << endl;
-    for (const auto &id : path[bestIdSet]) {
+    for (const auto &id : path[bestState]) {
         cout << id << ' ';
     }
     cout << endl;

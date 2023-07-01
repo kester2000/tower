@@ -28,8 +28,9 @@ struct MonsterAttr {
 };
 
 unordered_map<MapCode, string> nameMp = {
-    {"ST", "起点"},   {"c0", "黄钥匙"}, {"c1", "蓝钥匙"}, {"c2", "红钥匙"}, {"c4", "剑"},   {"c6", "蓝宝石"},
-    {"c7", "红宝石"}, {"d0", "红血瓶"}, {"d1", "蓝血瓶"}, {"h0", "黄门"},   {"h1", "蓝门"}, {"h2", "红门"},
+    {"ST", "起点"},   {"c0", "黄钥匙"}, {"c1", "蓝钥匙"}, {"c2", "红钥匙"}, {"c4", "剑"},
+    {"c6", "蓝宝石"}, {"c7", "红宝石"}, {"d0", "红血瓶"}, {"d1", "蓝血瓶"}, {"h0", "黄门"},
+    {"h1", "蓝门"},   {"h2", "红门"},   {"r3", "公主"},
 };
 
 unordered_map<MapCode, Attr> attrMp = {
@@ -38,7 +39,7 @@ unordered_map<MapCode, Attr> attrMp = {
     {"h0", {0, 0, -1, 0, 0}}, {"h1", {0, 0, 0, -1, 0}}, {"h2", {0, 0, 0, 0, -1}},
 };
 
-unordered_map<MapCode, int> hpMp = {{"d0", 75}, {"d1", 200}};
+unordered_map<MapCode, int> hpMp = {{"d0", 75}, {"d1", 200}, {"r3", 500}};
 
 unordered_map<MapCode, MonsterAttr> monsterMp;
 
@@ -69,7 +70,7 @@ unordered_map<State, int, StatetHash> dp;
 unordered_map<State, vector<Id>, StatetHash> path;
 unordered_set<State, StatetHash> inside;
 
-static int bestHp;
+static int bestHp = 0;
 static State bestState;
 
 static bool isWall(const MapCode &value) { return value == "a3"; }
@@ -117,12 +118,38 @@ static bool touch(Id id, State &state, Attr &attr, int &hp)
         attr.blue += other.blue;
         attr.red += other.red;
     } else {
-        const MonsterAttr &monster = monsterMp[mapCode];
-        int heroDamage = monster.sp == 3 ? 1 : attr.attack - monster.defend;
+        MonsterAttr monster = monsterMp[mapCode];
+        if (monster.sp == 21) {
+            for (const auto &u : state.first) {
+                if (!(u == startId || hpMp.count(id2MapCode[u]) || attrMp.count(id2MapCode[u]))) {
+                    monster.attack++;
+                    monster.defend++;
+                }
+            }
+        }
+        int heroAttack = attr.attack - attr.attack * state.second / 100;
+        int heroDefend = attr.defend - attr.defend * state.second / 100;
+        int heroDamage = heroAttack - monster.defend;
         if (heroDamage <= 0) return false;
-        int monsterDamage = monster.sp == 2 ? monster.attack : monster.attack - attr.defend;
+        int monsterDamage;
+        if (monster.sp == 2) {
+            monsterDamage = monster.attack;
+        } else if (monster.sp == 3) {
+            heroDamage = 1;
+        } else if (monster.sp == 4) {
+            monsterDamage = (monster.attack - heroDefend) * 2;
+        } else if (monster.sp / 10000 == 1) {
+            monsterDamage = monster.attack + heroDefend * ((monster.sp % 10000) / 100.0) - heroDefend;
+        } else {
+            monsterDamage = monster.attack - heroDefend;
+        }
         if (monsterDamage < 0) monsterDamage = 0;
         hp -= ((monster.hp - 1) / heroDamage) * monsterDamage;
+        if (monster.sp / 10000 == 4) {
+            state.second = monster.sp % 10000;
+        } else {
+            state.second = 0;
+        }
     }
     if (hp <= 0 || attr.yellow < 0 || attr.blue < 0 || attr.red < 0) {
         return false;
@@ -135,7 +162,8 @@ static vector<Id> add(State &state, Attr &attr, int &hp)
 {
     vector<Id> ret;
     // need to remove some map codes in some maps
-    unordered_set<MapCode> addSet = {"c0", "c1", "c2", "c4", "c6", "c7", "d0", "d1"};
+    // unordered_set<MapCode> addSet = {"c0", "c1", "c2", "c4", "c6", "c7", "d0", "d1"};
+    unordered_set<MapCode> addSet = {"c0", "c1", "c2", "c4", "c7", "d0", "d1"};
     queue<Id> nxtQueue;
     for (const auto &u : state.first) {
         for (const auto &v : adjacent[u]) {
@@ -177,14 +205,6 @@ int init(const char *body)
             ss >> codeMap[i][j];
         }
     }
-    // for (int i = 0; i < N; i++)
-    // {
-    //     for (int j = 0; j < N; j++)
-    //     {
-    //         cout << gameMap[i][j] << ' ';
-    //     }
-    //     cout << endl;
-    // }
 
     ss.getline(buff, 256);  // \n
     ss.getline(buff, 256);  // #
@@ -211,8 +231,8 @@ int init(const char *body)
             ss.getline(buff, 256);  // exp=
             ss.getline(buff, 256);  // sp=
             attr.sp = atoi(buff + 3);
-            // cout << mapCode << ' ' << attr.name << ' ' << attr.hp << ' ' << attr.attack << ' ' << attr.defend << ' '
-            // << attr.sp << endl;
+            cout << mapCode << ' ' << name << ' ' << attr.hp << ' ' << attr.attack << ' ' << attr.defend << ' '
+                 << attr.sp << endl;
             nameMp[mapCode] = move(name);
             monsterMp[mapCode] = move(attr);
         }
@@ -234,14 +254,19 @@ int init(const char *body)
     }
     idMap[initX][initY] = startId;
     codeMap[initX][initY] = startCode;
-    // for (int i = 0; i < N; i++)
-    // {
-    //     for (int j = 0; j < N; j++)
-    //     {
-    //         cout << idMap[i][j] << ' ';
-    //     }
-    //     cout << endl;
-    // }
+
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            cout << codeMap[i][j] << ' ';
+        }
+        cout << endl;
+    }
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            cout << idMap[i][j] << '\t';
+        }
+        cout << endl;
+    }
 
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
@@ -267,13 +292,18 @@ int spfa(char *buffer)
 {
     // string str;
     // stringstream ss(str);
-
     queue<pair<State, Attr>> queue;
-    State initstate = {{startId}, 0};
-    add(initstate, initAttr, initHp);
-    dp[initstate] = initHp;
-    inside.insert(initstate);
-    queue.emplace(move(initstate), move(initAttr));
+    State state = {{startId}, 0};
+    Attr attr = initAttr;
+    int hp = initHp;
+    vector<Id> addRet = add(state, attr, hp);
+    dp[state] = hp;
+    path[state].clear();
+    for (auto &addId : addRet) {
+        path[state].emplace_back(addId);
+    }
+    inside.insert(state);
+    queue.emplace(move(state), move(attr));
 
     while (!queue.empty()) {
 #ifdef QUEUE_LOG
@@ -330,9 +360,16 @@ int spfa(char *buffer)
         }
     }
 
-    cout << bestHp << endl;
+    state = {{startId}, 0};
+    attr = initAttr;
+    hp = initHp;
+    cout << hp << ' ' << attr.attack << ' ' << attr.defend << ' ' << attr.yellow << ' ' << attr.blue << ' ' << attr.red
+         << endl;
     for (const auto &id : path[bestState]) {
-        cout << id << ' ';
+        touch(id, state, attr, hp);
+        cout << id << endl;
+        cout << hp << ' ' << attr.attack << ' ' << attr.defend << ' ' << attr.yellow << ' ' << attr.blue << ' '
+             << attr.red << endl;
     }
     cout << endl;
 

@@ -1,5 +1,5 @@
 all:
-	g++ -o main tower.cpp main.cpp
+	g++ -o main main.cpp
 
 debug:
-	g++ -o main tower.cpp main.cpp -g
+	g++ -o main main.cpp -g

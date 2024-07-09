@@ -384,6 +384,7 @@ int init(const char *body)
         tmp = body;
         nextline(&body);
         string name(tmp + 10, body - 4);
+        name.erase(std::remove(name.begin(), name.end(), ' '), name.end());
         nextline(&body);
         nextline(&body);
         body += 8;
@@ -619,7 +620,7 @@ void clear()
     // inside.clear();
 }
 
-vector<Id> spfa(bool getFirst = false)
+vector<Id> spfa()
 {
     // string str;
     // stringstream ss(str);
@@ -691,20 +692,18 @@ vector<Id> spfa(bool getFirst = false)
                     }
                     else
                     {
-                        if (getFirst)
-                        {
-                            auto ret = path[state];
-                            clear();
-                            return ret;
-                        }
                         if (bestHp < hp)
                         {
+                            ofstream out;
+                            out.open("idlist.txt", ios::out);
                             bestHp = hp;
                             bestState = state;
                             cout << bestHp << endl;
+                            out << path[bestState].size() << endl;
                             for (const auto &id : path[bestState])
                             {
                                 cout << id << ' ';
+                                out << id << ' ';
                             }
                             cout << endl;
                         }

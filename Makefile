@@ -1,5 +1,7 @@
-all:
-	g++ -o main main.cpp
+FLAG = -O3
 
-debug:
-	g++ -o main main.cpp -g
+all:
+	g++ -o init init.cpp ${FLAG}
+	g++ -o cal cal.cpp ${FLAG}
+	g++ -o print print.cpp ${FLAG}
+	g++ -o short short.cpp ${FLAG}

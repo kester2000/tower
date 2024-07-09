@@ -20,10 +20,6 @@ int main(int argc, char **argv)
     }
     cout << v.size() << endl;
     auto p = makePath(v);
-    for (auto i : p)
-    {
-        cout << i << ' ';
-    }
     printPath(p);
     return 0;
 }

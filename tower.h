@@ -842,20 +842,59 @@ vector<int> makePath(vector<Id> idList)
     return {};
 }
 
-void printPath(vector<int> l)
+void pkn(int k, int n, ofstream &out)
 {
     const char *fx = "adws";
+    if (k == -1)
+        return;
+    if (n == 1)
+    {
+        cout << fx[k];
+        out << fx[k];
+    }
+    else if (n == 2)
+    {
+
+        cout << fx[k] << fx[k];
+        out << fx[k] << fx[k];
+    }
+    else
+    {
+
+        cout << fx[k] << n;
+        out << fx[k] << n;
+    }
+}
+
+void printPath(vector<int> l)
+{
     PathNode s;
     s.state = {{startId}, 0};
     s.attr = initAttr;
     s.hp = initHp;
     s.x = initX;
     s.y = initY;
+    ofstream out;
+    out.open("result.txt", ios::out);
     cout << s.hp << ' ' << s.attr.attack << ' ' << s.attr.defend << ' ' << s.attr.yellow << ' ' << s.attr.blue << ' '
          << s.attr.red << endl;
-    for (int k : l)
+    out << s.hp << ' ' << s.attr.attack << ' ' << s.attr.defend << ' ' << s.attr.yellow << ' ' << s.attr.blue << ' '
+        << s.attr.red << endl;
+    int count = 0;
+    int lastK = -1;
+    for (int i = 0; i < l.size(); i++)
     {
-        cout << fx[k];
+        int k = l[i];
+        if (k != lastK)
+        {
+            pkn(lastK, count, out);
+            lastK = k;
+            count = 1;
+        }
+        else
+        {
+            count++;
+        }
         auto tt = s;
         tt.x += dx[k];
         tt.y += dy[k];
@@ -863,14 +902,22 @@ void printPath(vector<int> l)
         Id &id = idMap[tt.x][tt.y];
         if (!isRoad(mapCode) && !tt.state.first.count(id))
         {
+            pkn(lastK, count, out);
+            lastK = -1;
+            count = 0;
             cout << endl;
+            out << endl;
             tt = s;
             touch(id, tt.state, tt.attr, tt.hp);
             cout << nameMp[mapCode] << ' ' << tt.hp << ' ' << tt.attr.attack << ' ' << tt.attr.defend << ' '
                  << tt.attr.yellow << ' ' << tt.attr.blue << ' ' << tt.attr.red << ' ' << id << ' ' << tt.x << ' '
                  << tt.y << endl;
+            out << nameMp[mapCode] << ' ' << tt.hp << ' ' << tt.attr.attack << ' ' << tt.attr.defend << ' '
+                << tt.attr.yellow << ' ' << tt.attr.blue << ' ' << tt.attr.red << ' ' << id << ' ' << tt.x << ' '
+                << tt.y << endl;
         }
         s = tt;
     }
     cout << endl;
+    out << endl;
 }

@@ -404,11 +404,11 @@ int init(const char *body)
         nextline(&body);
         cout << mapCode << ' ' << name << ' ' << attr.hp << ' ' << attr.attack << ' ' << attr.defend << ' ' << attr.sp
              << endl;
-        if (attr.sp / 10000 == 1 && attr.sp % 10000 > 100)
+        if (attr.sp == 10 || attr.sp == 12 || (attr.sp / 10000 == 1 && attr.sp % 10000 > 100))
         {
             addDef = false;
         }
-        else if (attr.sp / 10000 == 2)
+        if (attr.sp == 10 || attr.sp == 11 || attr.sp / 10000 == 2)
         {
             addAtk = false;
         }
@@ -500,11 +500,11 @@ void readInit()
     while (name != bossName)
     {
         cin >> mapCode >> name >> attr.hp >> attr.attack >> attr.defend >> attr.sp;
-        if (attr.sp / 10000 == 1 && attr.sp % 10000 > 100)
+        if (attr.sp == 10 || attr.sp == 12 || (attr.sp / 10000 == 1 && attr.sp % 10000 > 100))
         {
             addDef = false;
         }
-        else if (attr.sp / 10000 == 2)
+        if (attr.sp == 10 || attr.sp == 11 || attr.sp / 10000 == 2)
         {
             addAtk = false;
         }
